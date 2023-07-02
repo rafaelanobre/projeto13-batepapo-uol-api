@@ -40,7 +40,19 @@ app.post('/participants', (req,res) =>{
             name: name,
             lastStatus: Date.now()
         })
-            .then(() => res.sendStatus(201))
+        .then(() => {
+            const message = {
+                from: name,
+                to: 'Todos',
+                text: 'entra na sala...',
+                type: 'status',
+                time: DayJS().locale('pt-br').format('HH:mm:ss')
+            };
+
+            db.collection("messages").insertOne(message)
+                .then(() => res.sendStatus(201))
+                .catch(err => res.status(500).send(err.message));
+        })
             .catch(err => res.status(500).send(err.message))
     })
     .catch(err => res.status(500).send(err.message))
@@ -129,6 +141,11 @@ app.get('/messages', (req, res) => {
         res.status(500).send('Ocorreu um erro ao obter as mensagens.');
     }
 });
+
+//STATUS ROUTE
+app.post('/status', (req,res)=>{
+
+})
 
 
 app.listen(5000);
