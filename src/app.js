@@ -98,6 +98,8 @@ app.get('/messages', (req, res) => {
     const messagesLimit = parseInt(req.query.limit);
     const {user} = req.headers;
 
+    let messagesQuery;
+
     let queryParams = {
         $or: [
             { to: user },
