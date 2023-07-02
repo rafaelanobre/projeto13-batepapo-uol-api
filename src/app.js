@@ -94,4 +94,39 @@ app.post('/messages', (req,res)=>{
 
 });
 
+app.get('/messages', (req, res) => {
+    const messagesLimit = parseInt(req.query.limit);
+    const {user} = req.headers;
+
+    let queryParams = {
+        $or: [
+            { to: user },
+            { from: user },
+            { to: 'Todos' }
+        ],
+    };
+
+    if (messagesLimit) {
+        if (isNaN(messagesLimit) || messagesLimit <= 0) {
+            return res.status(422).send('Limite de mensagens inválido.');
+        }
+        messagesQuery = db.collection('messages').find(queryParams).limit(messagesLimit);
+    } else {
+        messagesQuery = db.collection('messages').find(queryParams);
+    }
+
+    if (messagesQuery) {
+        messagesQuery.toArray()
+            .then((messages) => {
+                res.status(200).send(messages);
+            })
+            .catch((error) => {
+                res.status(500).send(error.message);
+            });
+    } else {
+        res.status(500).send('Ocorreu um erro ao obter as mensagens.');
+    }
+});
+
+
 app.listen(5000);
