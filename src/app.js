@@ -123,7 +123,7 @@ app.get('/messages', (req, res) => {
     };
 
     if (messagesLimit) {
-        if (isNaN(messagesLimit) || messagesLimit <= 0) {
+        if (messagesLimit <= 0 || isNaN(messagesLimit)) {
             return res.status(422).send('Limite de mensagens inválido.');
         }
         messagesQuery = db.collection('messages').find(queryParams).limit(messagesLimit);
