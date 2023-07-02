@@ -25,7 +25,7 @@ app.post('/participants', (req,res) =>{
         const errors = validation.error.details.map((detail) => detail.message);
         return res.status(422).send(errors);
     }
-    if (name/* VERIFICAR SE JÁ TEM O NOME NO BANCO */){
+    if (db.participants.find({ name: name}) ){
         return res.status(409).send("Nome já em uso.")
     }
 
