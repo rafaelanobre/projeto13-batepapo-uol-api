@@ -72,17 +72,19 @@ app.post('/messages', (req,res)=>{
     const from = req.headers.user;
 
     const schema = joi.object({
+        from: joi.string().required(),
         to: joi.string().required().min(1),
         text: joi.string().required().min(1),
         type: joi.string().valid('message', 'private_message').required(),
-        from: joi.string().required()
+        time: joi.any()
     });
 
     const message = {
+        from,
         to,
         text,
         type,
-        from
+        time: DayJS().locale('pt-br').format('HH:mm:ss')
     }
 
     const validation = schema.validate(message, { abortEarly: false });
@@ -98,7 +100,7 @@ app.post('/messages', (req,res)=>{
             return res.status(422).send("Participante não existente.");
         }
 
-        db.collection("messages").insertOne({message, time: DayJS().locale('pt-br').format('HH:mm:ss')})
+        db.collection("messages").insertOne(message)
             .then(() => res.sendStatus(201))
             .catch(err => res.status(500).send(err.message))
     })
