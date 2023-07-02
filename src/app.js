@@ -2,11 +2,12 @@ import express from "express";
 import cors from 'cors';
 import { MongoClient } from "mongodb";
 import joi from 'joi'
+import dotenv from 'dotenv';
 
 const app = express();
 app.use(cors());
 app.use(express.json());
-configDotenv.config();
+dotenv.config();
 
 const mongoClient = new MongoClient(process.env.DATABASE_URL);
 let db;
@@ -25,21 +26,26 @@ app.post('/participants', (req,res) =>{
         const errors = validation.error.details.map((detail) => detail.message);
         return res.status(422).send(errors);
     }
-    if (db.participants.find({ name: name}) ){
-        return res.status(409).send("Nome já em uso.")
-    }
 
-    db.collection("participants").insertOne({
-		name: name,
-		lastStatus: Date.now()
-	})
-        .then(participants => res.sendStatus(201))
-	    .catch(err => res.status(500).send(err.message))
 
+    db.collection("participants").findOne({ name: name })
+    .then(participant => {
+        if (participant) {
+            return res.status(409).send("Nome já em uso.");
+        }
+
+        db.collection("participants").insertOne({
+            name: name,
+            lastStatus: Date.now()
+        })
+            .then(() => res.sendStatus(201))
+            .catch(err => res.status(500).send(err.message))
+    })
+    .catch(err => res.status(500).send(err.message))
 
 });
 
-app.get('participants', (req,res)=>{
+app.get('/participants', (req,res)=>{
     const users = db.collection("participants").find().toArray()
     .then(users => res.send(users))
     .catch(err => res.status(500).send(err.message))
