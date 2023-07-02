@@ -146,8 +146,28 @@ app.get('/messages', (req, res) => {
 
 //STATUS ROUTE
 app.post('/status', (req,res)=>{
+    const {user} = req.headers
 
-})
+    if(!user){
+        return res.sendStatus(404)
+    }
+
+    db.collection("participants").findOne({ name: user })
+    .then(participant => {
+        if (!participant) {
+            return res.sendStatus(404);
+        }
+
+        db.collection("participants").updateOne({ name: user }, { $set: { lastStatus: Date.now() } })
+            .then(() => {
+                res.sendStatus(200);
+            })
+            .catch((err) => {
+                res.status(500).send(err.message);
+            });
+    })
+    .catch(err => res.status(500).send(err.message))
+});
 
 
 app.listen(5000);
