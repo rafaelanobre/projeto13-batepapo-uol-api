@@ -3,6 +3,8 @@ import cors from 'cors';
 import { MongoClient } from "mongodb";
 import joi from 'joi'
 import dotenv from 'dotenv';
+import DayJS from 'dayjs';
+import 'dayjs/locale/pt-br.js';
 
 const app = express();
 app.use(cors());
@@ -53,5 +55,43 @@ app.get('/participants', (req,res)=>{
 
 //MESSAGES ROUTES
 
+app.post('/messages', (req,res)=>{
+    const {to, text, type} = req.body;
+    const from = req.headers.user;
+
+    const schema = joi.object({
+        to: joi.string().required().min(1),
+        text: joi.string().required().min(1),
+        type: joi.string().valid('message', 'private_message').required(),
+        from: joi.string().required()
+    });
+
+    const message = {
+        to,
+        text,
+        type,
+        from
+    }
+
+    const validation = schema.validate(message, { abortEarly: false });
+
+    if (validation.error) {
+        const errors = validation.error.details.map((detail) => detail.message);
+        return res.status(422).send(errors);
+    }
+
+    db.collection("participants").findOne({ name: from })
+    .then(participant => {
+        if (!participant) {
+            return res.status(422).send("Participante não existente.");
+        }
+
+        db.collection("messages").insertOne({message, time: DayJS().locale('pt-br').format('HH:mm:ss')})
+            .then(() => res.sendStatus(201))
+            .catch(err => res.status(500).send(err.message))
+    })
+    .catch(err => res.status(500).send(err.message))
+
+});
 
 app.listen(5000);
