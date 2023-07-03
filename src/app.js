@@ -112,6 +112,9 @@ app.get('/messages', (req, res) => {
     const messagesLimit = parseInt(req.query.limit);
     const {user} = req.headers;
 
+    const { error, value } = joi.number().integer().min(1).validate(req.query.limit);
+
+
     let messagesQuery;
 
     let queryParams = {
@@ -122,8 +125,8 @@ app.get('/messages', (req, res) => {
         ],
     };
 
-    if (messagesLimit) {
-        if (messagesLimit <= 0 || isNaN(messagesLimit)) {
+    if (messagesLimit !== undefined) {
+        if (error) {
             return res.status(422).send('Limite de mensagens inválido.');
         }
         messagesQuery = db.collection('messages').find(queryParams).limit(messagesLimit);
