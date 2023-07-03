@@ -151,7 +151,7 @@ app.get('/messages', (req, res) => {
 });
 
 app.delete('/messages/:id', (req, res) => {
-    const { User } = req.headers;
+    const { user } = req.headers;
     const { id } = req.params;
 
     db.collection('messages').findOne({ _id: new ObjectId(id) })
@@ -160,7 +160,7 @@ app.delete('/messages/:id', (req, res) => {
                 return res.sendStatus(404);
             }
     
-            if (message.from !== User) {
+            if (message.from !== user) {
                 return res.sendStatus(401);
             }
 
@@ -178,7 +178,7 @@ app.delete('/messages/:id', (req, res) => {
 });
 
 app.put('/messages/:id', (req, res) => {
-    const { User } = req.headers;
+    const { user } = req.headers;
     const { id } = req.params;
     const { to, text, type } = req.body;
 
@@ -201,7 +201,7 @@ app.put('/messages/:id', (req, res) => {
                 return res.sendStatus(404);
             }
 
-            if (message.from !== User) {
+            if (message.from !== user) {
                 return res.sendStatus(401);
             }
 
@@ -249,7 +249,7 @@ function removeInactiveParticipants() {
     db.collection("participants").find({ lastStatus: { $lt: Date.now() - 10000 } }).toArray()
         .then((participants) => {
             participants.forEach((participant) => {
-                db.collection("participants").deleteOne({ _id: new ObjectId(id) });
+                db.collection("participants").deleteOne({ _id: new ObjectId(participant._id) });
 
                 const message = {
                     from: participant.name,
