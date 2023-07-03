@@ -175,12 +175,10 @@ app.post('/status', (req,res)=>{
 //INATIVE USERS CLEANUP
 
 function removeInactiveParticipants() {
-    const allowedTime = Date.now() - 10000;
-
-    db.collection("participants").find({ lastStatus: { $lt: allowedTime } }).toArray()
+    db.collection("participants").find({ lastStatus: { $lt: Date.now() - 10000 } }).toArray()
         .then((participants) => {
             participants.forEach((participant) => {
-                db.collection("participants").deleteOne({ _id: new ObjectId(participant._id) });
+                db.collection("participants").deleteOne({ name: participant.name });
 
                 const message = {
                     from: participant.name,
