@@ -24,7 +24,7 @@ app.post('/participants', (req,res) =>{
     const {name} = req.body;
     const sanitizedName = stripHtml(name).result;
 
-    const validation = joi.string().required().validate(sanitizedName, { abortEarly: false });
+    const validation = joi.string().required().validate(sanitizedName.trim(), { abortEarly: false });
 
     if (validation.error) {
         const errors = validation.error.details.map((detail) => detail.message);
