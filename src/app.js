@@ -5,6 +5,7 @@ import joi from 'joi'
 import dotenv from 'dotenv';
 import DayJS from 'dayjs';
 import 'dayjs/locale/pt-br.js';
+import { stripHtml } from "string-strip-html";
 
 const app = express();
 app.use(cors());
@@ -21,8 +22,9 @@ mongoClient.connect()
 //PARTICIPANT ROUTES
 app.post('/participants', (req,res) =>{
     const {name} = req.body;
+    const sanitizedName = stripHtml(name).result;
 
-    const validation = joi.string().required().validate(name, { abortEarly: false });
+    const validation = joi.string().required().validate(sanitizedName, { abortEarly: false });
 
     if (validation.error) {
         const errors = validation.error.details.map((detail) => detail.message);
@@ -30,19 +32,19 @@ app.post('/participants', (req,res) =>{
     }
 
 
-    db.collection("participants").findOne({ name: name })
+    db.collection("participants").findOne({ name: sanitizedName })
     .then(participant => {
         if (participant) {
             return res.status(409).send("Nome já em uso.");
         }
 
         db.collection("participants").insertOne({
-            name: name,
+            name: sanitizedName.trim(),
             lastStatus: Date.now()
         })
         .then(() => {
             const message = {
-                from: name,
+                from: sanitizedName.trim(),
                 to: 'Todos',
                 text: 'entra na sala...',
                 type: 'status',
@@ -70,6 +72,7 @@ app.get('/participants', (req,res)=>{
 app.post('/messages', (req,res)=>{
     const {to, text, type} = req.body;
     const from = req.headers.user;
+    const sanitizedText = stripHtml(text).result;
 
     const schema = joi.object({
         from: joi.string().required(),
@@ -82,7 +85,7 @@ app.post('/messages', (req,res)=>{
     const message = {
         from,
         to,
-        text,
+        text: sanitizedText.trim(),
         type,
         time: DayJS().locale('pt-br').format('HH:mm:ss')
     }
