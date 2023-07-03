@@ -1,6 +1,6 @@
 import express from "express";
 import cors from 'cors';
-import { MongoClient } from "mongodb";
+import { MongoClient, ObjectId } from "mongodb";
 import joi from 'joi'
 import dotenv from 'dotenv';
 import DayJS from 'dayjs';
@@ -150,6 +150,33 @@ app.get('/messages', (req, res) => {
     }
 });
 
+app.delete('/messages/:id', (req, res) => {
+    const { User } = req.headers;
+    const { id } = req.params;
+
+    db.collection('messages').findOne({ _id: new ObjectId(id) })
+        .then((message) => {
+            if (!message) {
+                return res.sendStatus(404);
+            }
+    
+            if (message.from !== User) {
+                return res.sendStatus(401);
+            }
+
+            db.collection('messages').deleteOne({ _id: new ObjectId(id) })
+                .then(() => {
+                    res.status(200).send("Mensagem deletada.");
+                })
+                .catch((err) => {
+                    res.status(500).send(err.message);
+                });
+        })
+        .catch((err) => {
+            res.status(500).send(err.message);
+        });
+});
+
 //STATUS ROUTE
 app.post('/status', (req,res)=>{
     const {user} = req.headers
@@ -181,7 +208,7 @@ function removeInactiveParticipants() {
     db.collection("participants").find({ lastStatus: { $lt: Date.now() - 10000 } }).toArray()
         .then((participants) => {
             participants.forEach((participant) => {
-                db.collection("participants").deleteOne({ name: participant.name });
+                db.collection("participants").deleteOne({ _id: new ObjectId(id) });
 
                 const message = {
                     from: participant.name,
@@ -199,7 +226,7 @@ function removeInactiveParticipants() {
         });
 }
 
-setInterval(removeInactiveParticipants, 15000);  
+setInterval(removeInactiveParticipants, 15000);
 
 
 app.listen(5000);
