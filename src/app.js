@@ -177,6 +177,47 @@ app.delete('/messages/:id', (req, res) => {
         });
 });
 
+app.put('/messages/:id', (req, res) => {
+    const { User } = req.headers;
+    const { id } = req.params;
+    const { to, text, type } = req.body;
+
+    const schema = joi.object({
+        to: joi.string().required().min(1),
+        text: joi.string().required().min(1),
+        type: joi.string().valid('message', 'private_message').required(),
+    });
+
+    const validation = schema.validate({ to, text, type });
+
+    if (validation.error) {
+        const errors = validation.error.details.map((detail) => detail.message);
+        return res.status(422).send(errors);
+    }
+
+    db.collection('messages').findOne({ _id: new ObjectId(id) })
+        .then((message) => {
+            if (!message) {
+                return res.sendStatus(404);
+            }
+
+            if (message.from !== User) {
+                return res.sendStatus(401);
+            }
+
+            db.collection('messages').updateOne( { _id: new ObjectId(id) }, { $set: { to, text, type } })
+                .then(() => {
+                    res.sendStatus(200);
+                })
+                .catch((err) => {
+                    res.status(500).send(err.message);
+                });
+        })
+        .catch((err) => {
+            res.status(500).send(err.message);
+        });
+});
+
 //STATUS ROUTE
 app.post('/status', (req,res)=>{
     const {user} = req.headers
@@ -202,7 +243,7 @@ app.post('/status', (req,res)=>{
     .catch(err => res.status(500).send(err.message))
 });
 
-//INATIVE USERS CLEANUP
+//INACTIVE USERS CLEANUP
 
 function removeInactiveParticipants() {
     db.collection("participants").find({ lastStatus: { $lt: Date.now() - 10000 } }).toArray()
@@ -227,6 +268,5 @@ function removeInactiveParticipants() {
 }
 
 setInterval(removeInactiveParticipants, 15000);
-
 
 app.listen(5000);
