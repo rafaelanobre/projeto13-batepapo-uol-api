@@ -22,12 +22,19 @@ mongoClient.connect()
 //PARTICIPANT ROUTES
 app.post('/participants', (req,res) =>{
     const {name} = req.body;
-    const sanitizedName = stripHtml(name).result;
 
-    const validation = joi.string().required().validate(sanitizedName.trim(), { abortEarly: false });
+    const validation = joi.string().required().validate(name.trim(), { abortEarly: false });
 
     if (validation.error) {
         const errors = validation.error.details.map((detail) => detail.message);
+        return res.status(422).send(errors);
+    }
+    const sanitizedName = stripHtml(name).result;
+
+    const validation2 = joi.string().required().validate(sanitizedName.trim(), { abortEarly: false });
+
+    if (validation2.error) {
+        const errors = validation2.error.details.map((detail) => detail.message);
         return res.status(422).send(errors);
     }
 
@@ -72,6 +79,14 @@ app.get('/participants', (req,res)=>{
 app.post('/messages', (req,res)=>{
     const {to, text, type} = req.body;
     const from = req.headers.user;
+
+    const validation = joi.string().required().validate(text.trim(), { abortEarly: false });
+
+    if (validation.error) {
+        const errors = validation.error.details.map((detail) => detail.message);
+        return res.status(422).send(errors);
+    }
+
     const sanitizedText = stripHtml(text).result;
 
     const schema = joi.object({
@@ -90,10 +105,10 @@ app.post('/messages', (req,res)=>{
         time: DayJS().locale('pt-br').format('HH:mm:ss')
     }
 
-    const validation = schema.validate(message, { abortEarly: false });
+    const validation2 = schema.validate(message, { abortEarly: false });
 
-    if (validation.error) {
-        const errors = validation.error.details.map((detail) => detail.message);
+    if (validation2.error) {
+        const errors = validation2.error.details.map((detail) => detail.message);
         return res.status(422).send(errors);
     }
 
@@ -182,16 +197,25 @@ app.put('/messages/:id', (req, res) => {
     const { id } = req.params;
     const { to, text, type } = req.body;
 
+    const validation = joi.string().required().validate(text.trim(), { abortEarly: false });
+
+    if (validation.error) {
+        const errors = validation.error.details.map((detail) => detail.message);
+        return res.status(422).send(errors);
+    }
+
+    const sanitizedText = stripHtml(text).result;
+
     const schema = joi.object({
         to: joi.string().required().min(1),
         text: joi.string().required().min(1),
         type: joi.string().valid('message', 'private_message').required(),
     });
 
-    const validation = schema.validate({ to, text, type });
+    const validation2 = schema.validate({ to, text: sanitizedText, type });
 
-    if (validation.error) {
-        const errors = validation.error.details.map((detail) => detail.message);
+    if (validation2.error) {
+        const errors = validation2.error.details.map((detail) => detail.message);
         return res.status(422).send(errors);
     }
 
